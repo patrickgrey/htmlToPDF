@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer');
 const { Cluster } = require('puppeteer-cluster')
 const path = require('path');
 
-const urlIDs = [{ 'subject': 4, id: '11489568' }];
+const urlObjects = [{ 'subject': 4, id: '11489568' }];
 
 let browser, page;
 
@@ -19,22 +19,33 @@ let browser, page;
   })
 
   await cluster.task(async ({ page, data: url }) => {
-    await page.goto(url, { timeout: 0, waitUntil: 'networkidle2' })
-    await page.waitFor(300);
-    await page.emulateMediaType('screen');
-    const pageTitle = await page.title();
-    await page.pdf({
-      path: `pdf/subject-${urlIDs[i].subject}-${pageTitle}.pdf`
-      , format: 'A4'
-      , printBackground: true
-      , landscape: true
-      , margin: { top: "0", right: "0", bottom: "0", left: "0" }
-    });
+    try {
+      await page.goto(url, { timeout: 0, waitUntil: 'networkidle2' })
+      await page.waitFor(300);
+      await page.emulateMediaType('screen');
+      const pageTitle = await page.title();
+      // const subjectNumber = await urlObjects.find(function (urlObject, index) {
+      //   if (url === `https://learningzone.eurocontrol.int/ilp/customs/Reports/AdminFunctions/Execute/Goto/${urlObject[index].id}`)
+      //     return true;
+      // });
+      // await console.log(subjectNumber);
+      await page.pdf({
+        // path: `pdf/subject-${subjectNumber}-${pageTitle}.pdf`
+        path: `pdf/subject${pageTitle}.pdf`
+        , format: 'A4'
+        , printBackground: true
+        , landscape: true
+        , margin: { top: "0", right: "0", bottom: "0", left: "0" }
+      });
+    }
+    catch (error) {
+      console.log(error);
+    }
   })
 
-  for (i = 0; i < urlIDs.length; i++) {
-    // console.log(`https://learningzone.eurocontrol.int/ilp/customs/Reports/AdminFunctions/Execute/Goto/${urlIDs[i]}`)
-    await cluster.queue(`https://learningzone.eurocontrol.int/ilp/customs/Reports/AdminFunctions/Execute/Goto/${urlIDs[i].id}`)
+  for (i = 0; i < urlObjects.length; i++) {
+    // console.log(`https://learningzone.eurocontrol.int/ilp/customs/Reports/AdminFunctions/Execute/Goto/${urlObjects[i]}`)
+    await cluster.queue(`https://learningzone.eurocontrol.int/ilp/customs/Reports/AdminFunctions/Execute/Goto/${urlObjects[i].id}`)
   }
 
   await cluster.idle()
