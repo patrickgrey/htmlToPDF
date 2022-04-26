@@ -1,10 +1,14 @@
 const puppeteer = require('puppeteer');
 const { Cluster } = require('puppeteer-cluster')
-const path = require('path');
 
-const urlObjects = [{ 'subject': 4, id: '11489568' }];
+// https://stackoverflow.com/questions/54527982/why-is-puppeteer-reporting-unhandledpromiserejectionwarning-error-navigation
 
-let browser, page;
+const urlObjects = [
+  { 'subject': 4, id: '11489568' },
+  { 'subject': 4, id: '11490542' },
+  { 'subject': 4, id: '11490727' }
+  // { 'subject': 4, id: '11490738' }
+];
 
 (async () => {
 
@@ -18,23 +22,28 @@ let browser, page;
     }
   })
 
-  await cluster.task(async ({ page, data: url }) => {
+  await cluster.task(async ({ page, data: urlObject }) => {
     try {
-      await page.goto(url, { timeout: 0, waitUntil: 'networkidle2' })
-      await page.waitFor(300);
+      await page.goto(`https://learningzone.eurocontrol.int/ilp/customs/Reports/AdminFunctions/Execute/Goto/${urlObject.id}`, { timeout: 0, waitUntil: 'networkidle2' })
+      await page.waitForTimeout(5000);
       await page.emulateMediaType('screen');
-      const pageTitle = await page.title();
-      // const subjectNumber = await urlObjects.find(function (urlObject, index) {
-      //   if (url === `https://learningzone.eurocontrol.int/ilp/customs/Reports/AdminFunctions/Execute/Goto/${urlObject[index].id}`)
-      //     return true;
-      // });
-      // await console.log(subjectNumber);
+      await page.addStyleTag({ content: '.scrolltop-wrap{display:none}body::before{display:none}body{background-image:none}.a2-hero-image{max-height:445px}canvas{display:none}.a2-spline-cover{position:relative;trnasform:none;left:0}' })
+      const pageTitle = await page.title() || "noTitle" + new Date().getMilliseconds();
+
+      const webHeight = await page.evaluate(function () {
+        const body = document.body;
+        const html = document.documentElement;
+        return Math.max(body.getBoundingClientRect().height, html.getBoundingClientRect().height)
+      }) || 10000;
       await page.pdf({
-        // path: `pdf/subject-${subjectNumber}-${pageTitle}.pdf`
-        path: `pdf/subject${pageTitle}.pdf`
-        , format: 'A4'
+        path: `pdf/subject-${urlObject.subject}-${pageTitle}.pdf`
+        // path: `pdf/subject.pdf`
+        // , format: 'A4'
+        // , height: 10000
+        , height: `${(webHeight * 1.3) + 1}px`
+        , width: 1600
         , printBackground: true
-        , landscape: true
+        , landscape: false
         , margin: { top: "0", right: "0", bottom: "0", left: "0" }
       });
     }
@@ -44,37 +53,10 @@ let browser, page;
   })
 
   for (i = 0; i < urlObjects.length; i++) {
-    // console.log(`https://learningzone.eurocontrol.int/ilp/customs/Reports/AdminFunctions/Execute/Goto/${urlObjects[i]}`)
-    await cluster.queue(`https://learningzone.eurocontrol.int/ilp/customs/Reports/AdminFunctions/Execute/Goto/${urlObjects[i].id}`)
+    await cluster.queue(urlObjects[i])
   }
 
   await cluster.idle()
   await cluster.close()
 
-
-
-
-  // browser = await puppeteer.launch({
-  //   args: ['--no-sandbox', '--disable-setuid-sandbox']
-  //   , headless: true // printo to pdf only works in headless mode currently
-  // });
-  // page = await browser.newPage();
-
-  // 4.1 11489568
-
-  // this section can loop for processing of multiple files if needed.
-  // var pagePath = 'https://learningzone.eurocontrol.int/ilp/customs/Reports/AdminFunctions/Execute/Goto/11489568';
-  // var thispage = await page.goto(pagePath, { waitUntil: 'networkidle2' });
-  // await page.waitFor(300);
-  // await page.emulateMediaType('screen');
-  // await page.pdf({
-  //   path: 'pdf/4.1-introduction.pdf'
-  //   , format: 'A4'
-  //   , printBackground: true
-  //   , landscape: true
-  //   , margin: { top: "0", right: "0", bottom: "0", left: "0" }
-  // });
-
-
-  // await browser.close();
 })();
