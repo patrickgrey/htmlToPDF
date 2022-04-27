@@ -6,10 +6,12 @@ const { Cluster } = require('puppeteer-cluster')
 // https://learningzone.eurocontrol.int/ilp/customs/Reports/AdminFunctions/Execute/Goto/11490738
 
 const urlObjects = [
-  { 'subject': 4, id: '11489568' },
-  { 'subject': 4, id: '11490542' },
-  { 'subject': 4, id: '11490727' },
-  { 'subject': 4, id: '11490738' }
+
+  // DONE
+  // { 'subject': 4, id: '11489568' },
+  // { 'subject': 4, id: '11490542' },
+  // { 'subject': 4, id: '11490727' },
+  // { 'subject': 4, id: '11490738' }
 ];
 
 (async () => {
@@ -41,9 +43,9 @@ const urlObjects = [
       });
       // await page.setJavaScriptEnabled(false);
       await page.goto(`https://learningzone.eurocontrol.int/ilp/customs/Reports/AdminFunctions/Execute/Goto/${urlObject.id}`, { timeout: 0, waitUntil: 'networkidle2' })
-      await page.waitForTimeout(5000);
+      await page.waitForTimeout(10000);
       await page.emulateMediaType('screen');
-      await page.addStyleTag({ content: '.scrolltop-wrap{display:none}body::before{display:none}body{background-image:none}.a2-hero-image{max-height:445px}canvas{display:none}.a2-spline-cover{position:relative;trnasform:none;left:0}' })
+      await page.addStyleTag({ content: '.scrolltop-wrap{display:none}body::before{display:none}body{background-image:none}.a2-hero-image{max-height:445px}canvas{display:none !important}.a2-spline-cover{position:relative;transform:none;left:0}' })
       const pageTitle = await page.title() || "noTitle" + new Date().getMilliseconds();
 
       const webHeight = await page.evaluate(function () {
