@@ -3,11 +3,13 @@ const { Cluster } = require('puppeteer-cluster')
 
 // https://stackoverflow.com/questions/54527982/why-is-puppeteer-reporting-unhandledpromiserejectionwarning-error-navigation
 
+// https://learningzone.eurocontrol.int/ilp/customs/Reports/AdminFunctions/Execute/Goto/11490738
+
 const urlObjects = [
   { 'subject': 4, id: '11489568' },
   { 'subject': 4, id: '11490542' },
-  { 'subject': 4, id: '11490727' }
-  // { 'subject': 4, id: '11490738' }
+  { 'subject': 4, id: '11490727' },
+  { 'subject': 4, id: '11490738' }
 ];
 
 (async () => {
@@ -18,12 +20,26 @@ const urlObjects = [
     puppeteerOptions: {
       headless: true,
       devtools: false,
-      args: [],
+      args: ['--enable-features=NetworkService',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process',
+        '--shm-size=3gb'],
     }
   })
 
   await cluster.task(async ({ page, data: urlObject }) => {
     try {
+      await page.setRequestInterception(true);
+      page.on('request', request => {
+        if (request.resourceType() === 'script')
+          request.abort();
+        else
+          request.continue();
+      });
+      // await page.setJavaScriptEnabled(false);
       await page.goto(`https://learningzone.eurocontrol.int/ilp/customs/Reports/AdminFunctions/Execute/Goto/${urlObject.id}`, { timeout: 0, waitUntil: 'networkidle2' })
       await page.waitForTimeout(5000);
       await page.emulateMediaType('screen');
